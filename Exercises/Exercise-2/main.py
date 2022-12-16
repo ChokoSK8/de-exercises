@@ -1,11 +1,13 @@
 import requests
-import pandas
+import pandas as pd
 from bs4 import BeautifulSoup
+import os
+from os.path import exists
 
-weether_url = "https://www.ncei.noaa.gov/data/local-climatological-data/access/2021/";
+weether_uri = "https://www.ncei.noaa.gov/data/local-climatological-data/access/2021/";
 
-def	getPageContent(url):
-	response = requests.get(url);
+def	getPageContent(uri):
+	response = requests.get(uri);
 	if (response.status_code == 200):
 		return (response.content);
 
@@ -13,38 +15,67 @@ def	displayHtmlContent(html_content):
 	soup = BeautifulSoup(html_content, 'html.parser');
 	print(soup.prettify());
 
-def	getDateIndex(array, date):
-	index = 0;
-	len_array = len(array);
-	while index < len_array - 1:
-		print(array[index]);
-		print(index);
-		if array[index].find(date) > 0:
-			return (index);
-		index += 1;
-	return (-1);
+def	getStrInQuotes(string, firstQuotePos):
+	counter = firstQuotePos;
+	strInQuotes = "";
+	while string[counter] != '"':
+		strInQuotes += string[counter];
+		counter += 1;
+	return strInQuotes;
 
-def	findBeaconFromArray(html_array, date):
-	index = getDateIndex(html_array, date);
-	if (index < 0):
-		print("|" + date + "| not found");
-	else:
-		print("index of |" + date + "| is " + str(index));
+def getHrefInStr(strWithHref):
+	hrefPos = strWithHref.find("href=");
+	href = getStrInQuotes(strWithHref, hrefPos + 6);
+	print("href = |" + href + "|");
+	return href;
 
-def	getHtmlPageInArray(html_content):
+def	getHrefByDate(html_content, html_wrapper, date):
 	soup = BeautifulSoup(html_content, 'html.parser');
-#	string = soup.get_text();
-	string = soup.prettify();
-	array = string.split("/n");
-	return (array);
+	elements = soup.find_all(html_wrapper);
+	for element in elements:
+		if str(element).find(date) > 0:
+			strWithHref = str(element);
+	href = getHrefInStr(strWithHref);
+	return href;
+
+def	createDir(dirname):
+	path = os.path.join('./', dirname);
+	if not os.path.exists(path):
+		os.mkdir(path);
+
+def	downloadInDir(uri, dirname):
+	createDir(dirname);
+	response = requests.get(uri)
+	if response.status_code == 200:
+		spliter = uri.split('/');
+		filename = spliter[len(spliter) - 1];
+		file_location = "./" + dirname + "/";
+		print("Downloading " + filename);
+		if not exists(file_location + filename):
+			if open(file_location + filename, "wb").write(response.content) == False:
+				print("Cannot write content in " + file_location + filename);
+			else:
+				print(filename + " downloaded !")
+
+def	getDfFromCsv(csv_path):
+	df = pd.read_csv(csv_path);
+	df.head();
+	return df;
+
+def getHighestOf(df, column):
+	highest = df[column].max();
+	return highest;
 
 def main():
-	page_content = getPageContent(weether_url);
-	if (not page_content):
-		return ;
-#	displayHtmlContent(page_content);
-	html_array = getHtmlPageInArray(page_content);
-	findBeaconFromArray(html_array, "2022-02-07 14:03");
+#	html_content = getPageContent(weether_uri);
+#	if (not html_content):
+#		return ;
+#	href = getHrefByDate(html_content, "tr", "2022-02-07 14:03");
+	href = "A0002453848.csv";
+#	downloadInDir(weether_uri + href, "download");
+	df = getDfFromCsv("./download/" + href);
+	highest = getHighestOf(df, HourlyDryBulbTemperature)
+	print(highest);
 	pass
 
 
