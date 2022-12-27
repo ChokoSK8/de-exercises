@@ -63,8 +63,36 @@ def	getDfFromCsv(csv_path):
 	return df;
 
 def getHighestOf(df, column):
-	highest = df[column].max();
+	highest = df[column].astype(float, errors='ignore').max();
 	return highest;
+
+def	printColumns(df):
+	cols = df.columns;
+	for col in cols:
+		print("col: " + col);
+
+def	getDtypeOfColumn(df, column):
+	rows = df[column];
+	for row in rows:
+		print(type(row));
+
+def	convertToFloatInColumn(df, column):
+	df[column] = df[column].astype(float, errors='ignore');
+	return (df);
+
+def	convertToFloat():
+	x = "12s";
+	print("x type: " + str(type(x)));
+	x = float(x);
+	print("x new type: " + str(type(x)));
+
+def	countFloatValueInColumn(df, column):
+	rows = df[column];
+	n = 0;
+	for row in rows:
+		if (type(row) == float):
+			n += 1;
+	print("Number of float: " + str(n));
 
 def main():
 #	html_content = getPageContent(weether_uri);
@@ -74,7 +102,11 @@ def main():
 	href = "A0002453848.csv";
 #	downloadInDir(weether_uri + href, "download");
 	df = getDfFromCsv("./download/" + href);
-	highest = getHighestOf(df, HourlyDryBulbTemperature)
+	countFloatValueInColumn(df, "HourlyDryBulbTemperature");
+	df = convertToFloatInColumn(df, "HourlyDryBulbTemperature");
+	countFloatValueInColumn(df, "HourlyDryBulbTemperature");
+	getDtypeOfColumn(df, "HourlyDryBulbTemperature");
+	highest = getHighestOf(df, "HourlyDryBulbTemperature");
 	print(highest);
 	pass
 
